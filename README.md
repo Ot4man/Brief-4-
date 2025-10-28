@@ -74,7 +74,7 @@ Job Listings Application est une application Front-End moderne permettant de gé
 1. Cloner le repository :
 
 ```bash
-git clone https://github.com/<YOUR_USERNAME>/<REPO_NAME>.git
+git clone https://github.com/Ot4man/Brief-4-.git
 ```
 
 2. Ouvrir `index.html` dans un navigateur moderne.
