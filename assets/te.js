@@ -121,7 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
      * @function saveAllJobs
      */
     const saveAllJobs = () => {
-        localStorage.setItem(ALL_JOBS_KEY, JSON.stringify(allJobs));
         // TODO: Implement localStorage save functionality
     };
 
@@ -212,8 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
         //  </li>`
     };
 
-
-    
     /**
      * Renders profile form with saved data
      * @function renderProfileForm
@@ -269,31 +266,29 @@ document.addEventListener('DOMContentLoaded', () => {
      * Saves favorites to localStorage
      * @function saveFavorites
      */
-    
     const saveFavorites = () => {
-        localStorage.setItem("favorites", JSON.stringify(favoriteJobIds));
+        localStorage.setItem(FAVORITES_STORAGE_KEY,JSON.stringify(favoriteJobIds));
         // TODO: Implement favorites saving
     };
+
     /**
      * Loads favorites from localStorage
      * @function loadFavorites
      */
     const loadFavorites = () => {
-    const saved = localStorage.getItem("favorites");
-        if (saved) {
-        favoriteJobIds = JSON.parse(saved);
-        } else {
-        favoriteJobIds = [];
-    }
+        const storedfav =localStorage.getItem(FAVORITES_STORAGE_KEY);
+        if(storedfav){
+            favoriteJobIds =JSON.parse(storedfav)
+        }
+        // TODO: Implement favorites loading
     };
-        // TODO: Implement favorites loading        
+
     /**
      * Updates favorites count display
      * @function renderFavoritesCount
      */
     const renderFavoritesCount = () => {
-        const favoritesCount = document.getElementById("favorites-count")
-        favoritesCount.textContent = `(${favoriteJobIds.length})`
+        favoritesCount.textContent = favoriteJobIds.length
         // TODO: Update favorites count in tab
     };
 
@@ -302,23 +297,18 @@ document.addEventListener('DOMContentLoaded', () => {
      * @function renderFavoriteJobs
      */
     const renderFavoriteJobs = () => {
-        const container =document.getElementById("favorite-jobs-container")
-        const favoriteJobs = allJobs.filter(job =>favoriteJobIds.includes(job.id))
-        if(favoriteJobs.length ==0){
-            container.innerHTML ='<p>No favoritte</p>'
-            return;
+        const renderFavoriteJobs =allJobs.filter(job => favoriteJobIds.includes(job.id))
+        if (favoriteJobs.length === 0){
+            favoriteJobsContainer.innerHTML = `<p class ="job-listings-empty>no favo</p>`
+        }else{
+            favoriteJobsContainer.innerHTML =favoriteJobs.map(createJobCardHTML).join('')
         }
-        //  else if(favoriteJobs.length !=0){
-        //     container.innerHTML ='<p>my favorite </p>'
-        //     return;
-        // }
-        container.innerHTML = favoriteJobs.map(createJobCardHTML).join('')
+        
         // TODO: Implement favorites rendering
         // 1. Filter jobs by favorite IDs
         // 2. Use createJobCardHTML for each job
         // 3. Show empty message if no favorites
     };
-    
 
     /**
      * Toggles job favorite status
@@ -326,40 +316,27 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {number} jobId - Job ID to toggle
      */
     const toggleFavorite = (jobId) => {
-        jobId =Number(jobId)
+        let id =jobId;
+        if(typeof jobId==='string')
+            id =parseInt(jobId,10)
       //search
-        const indexofjobs = favoriteJobIds.indexOf(jobId) ;
-        if(indexofjobs >-1){
+        const indexofjobs = favoriteJobIds.indexof(id) ;
+        if(indexofjobs !==-1){
         //remove jobs
         favoriteJobIds.splice(indexofjobs,1);
         }else{
         //add job
         favoriteJobIds.push(jobId);}
-
-        saveFavorites()
-        renderFavoritesCount()
+        localStorage.setItem("favorites", JSON.stringify(favorites));
+        saveFavorites
+        updateFavoriteIcon(id);
         renderFavoriteJobs();
-        renderJobs(allJobs)
         // // TODO: Implement favorite toggle
         // 1. Check if job is already favorite
         // 2. Add or remove from favorites array
         // 3. Save to localStorage
         // 4. Update UI
     };
-    jobListingsContainer.addEventListener('click', (e) => {
-    const favBtn = e.target.closest('.job-card__favorite-btn');
-    if (favBtn) {
-        const jobId = favBtn.dataset.jobId;
-        toggleFavorite(jobId);
-        return; 
-    }
-    
-    const jobCard = e.target.closest('.job-card');
-    if (jobCard) {
-        const jobId = jobCard.dataset.jobId;
-        openViewModal(Number(jobId));
-    }
-});
 
     // ------------------------------------
     // --- TAB NAVIGATION ---
@@ -595,8 +572,8 @@ document.addEventListener('DOMContentLoaded', () => {
      */
 
     const applyAllFilters = () => { 
-        loadAllJobs();
-        searchInput.addEventListener("input", (val) => { 
+    loadAllJobs();
+    searchInput.addEventListener("input", (val) => { 
         const input = val.target.value; 
         console.log(input); 
         const fitred = allJobs.filter((tmp) => tmp.company.toLowerCase().includes(input.toLowerCase()) ||
@@ -696,4 +673,163 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Start the application
     initializeApp();
+});
+
+
+
+
+
+
+// ------------------------------------
+// FAVORITES SYSTEM (BEGINNER VERSION)
+// ------------------------------------
+
+// Stores all favorite job IDs
+let favoriteJobIds = [];
+
+// Load favorites from localStorage
+const loadFavorites = () => {
+  const saved = localStorage.getItem("favorites");
+  if (saved) {
+    favoriteJobIds = JSON.parse(saved);
+  } else {
+    favoriteJobIds = [];
+  }
+};
+
+// Save favorites to localStorage
+const saveFavorites = () => {
+  localStorage.setItem("favorites", JSON.stringify(favoriteJobIds));
+};
+
+// Toggle favorite on click
+const toggleFavorite = (jobId) => {
+  jobId = Number(jobId);
+  const index = favoriteJobIds.indexOf(jobId);
+
+  if (index > -1) {
+    // If job already in favorites → remove it
+    favoriteJobIds.splice(index, 1);
+  } else {
+    // If not in favorites → add it
+    favoriteJobIds.push(jobId);
+  }
+
+  saveFavorites(); // Save to localStorage
+  renderAllJobs(); // Re-render all jobs (to refresh stars)
+  renderFavoriteJobs(); // Update favorites tab
+};
+
+// Add click events to all stars after rendering
+const attachFavoriteEvents = () => {
+  const favoriteButtons = document.querySelectorAll(".job-card__favorite-btn");
+
+  favoriteButtons.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const id = e.currentTarget.getAttribute("data-job-id");
+      toggleFavorite(id);
+    });
+  });
+};
+
+// Render favorites tab
+const renderFavoriteJobs = () => {
+  const container = document.getElementById("favorites-container");
+  if (!container) return;
+
+  // Filter jobs by favorites
+  const favoriteJobs = allJobs.filter((job) => favoriteJobIds.includes(job.id));
+
+  if (favoriteJobs.length === 0) {
+    container.innerHTML = "<p>No favorite jobs yet.</p>";
+    return;
+  }
+
+  // Show favorite job cards
+  container.innerHTML = favoriteJobs.map((job) => createJobCardHTML(job)).join("");
+
+  // Attach events again for favorite stars
+  attachFavoriteEvents();
+};
+
+// Call when app starts
+loadFavorites();
+
+
+------------
+// -------------------------
+// FAVORITES SYSTEM
+// -------------------------
+
+/** @type {Array} Array of favorite job IDs */
+let favoriteJobIds = [];
+
+// Load favorites from localStorage
+const loadFavorites = () => {
+    const saved = localStorage.getItem("favorites");
+    if (saved) {
+        favoriteJobIds = JSON.parse(saved);
+    } else {
+        favoriteJobIds = [];
+    }
+};
+
+// Save favorites to localStorage
+const saveFavorites = () => {
+    localStorage.setItem("favorites", JSON.stringify(favoriteJobIds));
+};
+
+// Update favorites count in tab
+const renderFavoritesCount = () => {
+    const favoritesCount = document.getElementById("favorites-count");
+    favoritesCount.textContent = `(${favoriteJobIds.length})`;
+};
+
+// Render favorite jobs in Favorites tab
+const renderFavoriteJobs = () => {
+    const container = document.getElementById("favorite-jobs-container");
+    const favoriteJobs = allJobs.filter(job => favoriteJobIds.includes(job.id));
+
+    if (favoriteJobs.length === 0) {
+        container.innerHTML = '<p>Aucune offre favorite pour le moment.</p>';
+        return;
+    }
+
+    container.innerHTML = favoriteJobs.map(createJobCardHTML).join('');
+};
+
+// Toggle favorite status for a job
+const toggleFavorite = (jobId) => {
+    jobId = Number(jobId);
+    const indexOfJob = favoriteJobIds.indexOf(jobId);
+
+    if (indexOfJob > -1) {
+        // Remove from favorites
+        favoriteJobIds.splice(indexOfJob, 1);
+    } else {
+        // Add to favorites
+        favoriteJobIds.push(jobId);
+    }
+
+    // Save and update UI
+    saveFavorites();
+    renderFavoritesCount();
+    renderFavoriteJobs();
+    renderJobs(allJobs); // refresh stars in main job list
+};
+
+// Handle clicks on favorite buttons in job listings
+jobListingsContainer.addEventListener('click', (e) => {
+    const favBtn = e.target.closest('.job-card__favorite-btn');
+    if (favBtn) {
+        const jobId = favBtn.dataset.jobId;
+        toggleFavorite(jobId);
+        return; // stop here if clicked favorite
+    }
+
+    const jobCard = e.target.closest('.job-card');
+    if (jobCard) {
+        const jobId = jobCard.dataset.jobId;
+        openViewModal(Number(jobId));
+    }
 });
